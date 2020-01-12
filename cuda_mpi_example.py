@@ -68,7 +68,8 @@ print('Process %d, my_input_data = %s' % (mpi_comm.rank, my_input_data))
 
 # Perform computation on local data
 
-@cuda.jit
+# To use CUDA uncomment the line below `@cuda.jit`
+# @cuda.jit
 def sqplus2(input_data, output_data):
     for i in range(len(input_data)):
         d = input_data[i]

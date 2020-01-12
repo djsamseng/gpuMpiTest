@@ -1,6 +1,9 @@
 # MPI and CUDA
 Cuda aware MPI allows you to run GPU nodes with the nodes sending each other messages. Thus if a node is running a long time with state it can receive input from other nodes
 
+## GPU
+Need an NVIDIA GPU - CUDA. To enable CUDA/GPUs uncomment `@cuda.jit` from code
+
 ## Install
 1) Download and install OpenMPI https://www.open-mpi.org/faq/?category=building
 2) Install mpi4py 
