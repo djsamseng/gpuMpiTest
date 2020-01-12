@@ -21,3 +21,15 @@ $ ./configure --with-cuda
 ## Python
 - Pip installed mpi4py for python 3 so use `python3` alias to python3
 
+## Run
+```bash
+$ mpirun -np 2 python3 cuda_mpi_example.py # Replace 2 with number of processes
+$ mpirun -np [np] python3 test.py # Chain send and while True wait
+```
+
+## Kill processes
+```bash
+$ ps
+$ kill -9 PID
+```
+
