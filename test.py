@@ -5,37 +5,89 @@ import sys
 comm = MPI.COMM_WORLD
 TAG = 11
 
-MAX_RANK = comm.Get_size() - 1
+NUM_NODES = comm.Get_size()
+MAX_RANK = NUM_NODES - 1
+rank = comm.Get_rank()
+
+MASTER_DEST = 0
+
+COMM_KEYS = {};
+COMM_KEYS["log"] = "log"
+COMM_KEYS["end"] = "end"
+
+def sendData(data, dest):
+    commData = {}
+    commData["key"] = "data"
+    commData["data"] = data
+    comm.send(commData, dest=dest)
+
+def sendEnd(selfRank):
+    endMsg = {}
+    endMsg["key"] = "end"
+    endMsg["data"] = selfRank
+    comm.send(endMsg, dest=MASTER_DEST)
+
+def log(message):
+    if rank == MASTER_DEST:
+        print(message)
+    else:
+        data = {}
+        data["key"] = "log"
+        data["data"] = message
+        comm.send(data, dest=MASTER_DEST)
 
 class Node:
+    # Input and output weights - too general of a node (highly connected) won't
+    # get triggered for everything when not that important
+    # Activation threshold
+    # "Analyze this website" - use Puppeteer to go to website
+    # Nodes combine and strengthen (like muscles) and die over time
+    # Some nodes are action outputs inputs feelings thoughts choices imagination
     def __init__(self):
         self.dataRecv = []
         self.rank = comm.Get_rank()
-        print("Rank:{0} Created".format(self.rank))
+        log("Rank:{0} Created".format(self.rank))
 
     def send(self, data):
         sendTo = self.rank + 1
-        comm.send(data, dest=self.rank + 1)
+        sendData(data, dest=self.rank + 1)
 
     def waitForRequest(self):
-        print("Rank:{0} Waiting".format(self.rank))
+        log("Rank:{0} Waiting".format(self.rank))
         while True:
             data = comm.recv(source=self.rank - 1)
-            print("Rank:{0} Received:{1}".format(self.rank, data))
-            self.dataRecv.append(data)
+            log("Rank:{0} Received:{1}".format(self.rank, data["data"]))
+            self.dataRecv.append(data["data"])
             if (self.rank < MAX_RANK):
-                self.send(data + 1)
+                self.send(data["data"] + 1)
 
             # Finally exit once telling any followers of last data
-            if (len(self.dataRecv) == 5):
+            if (len(self.dataRecv) == NUM_NODES):
+                sendEnd(self.rank)
                 return
 
+class MasterNode:
+    def __init__(self):
+        pass
+    def start(self):
+        for itr in range(0,NUM_NODES):
+            log("Rank:{0} Send:{1} To:{2}".format(rank, itr, 1))
+            sendData(itr, dest=1)
 
-rank = comm.Get_rank()
+        endCount = 0
+        while True:
+            data = comm.recv(source=MPI.ANY_SOURCE)
+            if data["key"] == "end":
+                endCount += 1
+                if endCount == MAX_RANK:
+                    break
+            if data["key"] == "log":
+                log(data["data"])
+
+
 if rank == 0:
-    for itr in range(0,5):
-        print("Rank:{0} Send:{1} To:{2}".format(rank, itr, 1))
-        req = comm.send(itr, dest=1)
+    masterNode = MasterNode()
+    masterNode.start()
 else:
     node = Node()
     node.waitForRequest()
